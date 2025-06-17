@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Check-In</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#1f1c2c" />
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #1f1c2c, #928dab);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      text-align: center;
+      width: 90%;
+      max-width: 400px;
+    }
+    input {
+      width: 100%;
+      padding: 15px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+    }
+    button {
+      background: #00c9ff;
+      background: linear-gradient(to right, #92fe9d, #00c9ff);
+      border: none;
+      color: black;
+      padding: 15px 25px;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 10px;
+    }
+    button:hover {
+      transform: scale(1.05);
+      background: linear-gradient(to right, #00c9ff, #92fe9d);
+    }
+    footer {
+      position: absolute;
+      bottom: 20px;
+      font-size: 0.8rem;
+      opacity: 0.6;
+    }
+    .tab-selector {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .tab-selector button {
+      margin: 0 10px;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .tab-selector button.active {
+      background: #00c9ff;
+      color: black;
+    }
+  </style>
+</head>
+<body>
+  <h1>Check-In</h1>
+  <div class="tab-selector">
+    <button id="tabEmpleado" class="active" onclick="cambiarModo('empleado')">Empleado</button>
+    <button id="tabAdmin" onclick="cambiarModo('admin')">Administrador</button>
+  </div>
+
+  <div class="card">
+    <div id="formEmpleado">
+      <p>Ingresá tu ID de empleado</p>
+      <input type="text" id="userId" placeholder="Ej. 123456" autocomplete="off" />
+      <button onclick="iniciarAutenticacion()">Ingresar con huella</button>
+    </div>
+    <div id="formAdmin" style="display: none;">
+      <p>Inicio de sesión de administrador</p>
+      <input type="text" id="adminUser" placeholder="Usuario" />
+      <input type="password" id="adminPass" placeholder="Contraseña" />
+      <button onclick="iniciarSesionAdmin()">Ingresar</button>
+    </div>
+    <p id="estado" style="margin-top:20px;"></p>
+  </div>
+  <footer>© 2025 Check-In. Todos los derechos reservados.</footer>
+
+  <script>
+    function cambiarModo(modo) {
+      const tabEmpleado = document.getElementById('tabEmpleado');
+      const tabAdmin = document.getElementById('tabAdmin');
+      const formEmpleado = document.getElementById('formEmpleado');
+      const formAdmin = document.getElementById('formAdmin');
+
+      if (modo === 'empleado') {
+        tabEmpleado.classList.add('active');
+        tabAdmin.classList.remove('active');
+        formEmpleado.style.display = 'block';
+        formAdmin.style.display = 'none';
+      } else {
+        tabAdmin.classList.add('active');
+        tabEmpleado.classList.remove('active');
+        formAdmin.style.display = 'block';
+        formEmpleado.style.display = 'none';
+      }
+
+      document.getElementById('estado').textContent = '';
+    }
+
+    async function iniciarAutenticacion() {
+      const userId = document.getElementById("userId").value.trim();
+      const estado = document.getElementById("estado");
+
+      if (userId === "") {
+        estado.textContent = "Por favor, ingresá tu ID.";
+        return;
+      }
+
+      estado.textContent = "Verificando huella digital...";
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      localStorage.setItem("checkin_user_id", userId);
+      estado.textContent = "✅ Huella verificada. Bienvenido/a, ID " + userId + ".";
+
+      setTimeout(() => window.location.href = "fichar.html", 1000);
+    }
+
+    function iniciarSesionAdmin() {
+      const user = document.getElementById("adminUser").value.trim();
+      const pass = document.getElementById("adminPass").value.trim();
+      const estado = document.getElementById("estado");
+
+      if (user === "admin" && pass === "admin") {
+        estado.textContent = "✅ Acceso concedido. Redirigiendo al panel de administrador...";
+        setTimeout(() => window.location.href = "admin.html", 1000);
+      } else {
+        estado.textContent = "❌ Usuario o contraseña incorrectos.";
+      }
+    }
+  </script>
+</body>
+</html>
