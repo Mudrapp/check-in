@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fichar - Check-In</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#16222A">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #16222A, #3A6073);
+      color: white;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    .card {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(10px);
+      padding: 20px;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 500px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+      margin-bottom: 30px;
+    }
+    button {
+      width: 100%;
+      margin: 10px 0;
+      padding: 15px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(to right, #43cea2, #185a9d);
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    button:hover {
+      background: linear-gradient(to right, #185a9d, #43cea2);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      padding: 8px;
+      text-align: center;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    th {
+      background-color: rgba(255,255,255,0.1);
+    }
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 1.5rem;
+      }
+      button {
+        font-size: 0.9rem;
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Registro Diario</h1>
+  <div class="card">
+    <p>ID Usuario: <strong id="userId"></strong></p>
+    <button onclick="fichar('entrada')">Fichar Entrada</button>
+    <button onclick="fichar('salida')">Fichar Salida</button>
+    <button onclick="cerrarSesion()">Cerrar Sesión</button>
+  </div>
+
+  <div class="card">
+    <h2>Resumen del Mes</h2>
+    <table id="tablaRegistros">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Entrada</th>
+          <th>Salida</th>
+          <th>Horas</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <p>Total del mes: <strong id="totalHoras">0</strong> horas</p>
+  </div>
+
+  <script>
+    const userId = localStorage.getItem('checkin_user_id');
+    document.getElementById('userId').textContent = userId || 'Desconocido';
+
+    let registros = JSON.parse(localStorage.getItem('checkin_registros') || '{}');
+    if (!registros[userId]) registros[userId] = [];
+
+    function getUTCDate() {
+      const now = new Date();
+      const year = now.getUTCFullYear();
+      const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(now.getUTCDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function getUTCTime() {
+      const now = new Date();
+      const hour = String(now.getUTCHours()).padStart(2, '0');
+      const min = String(now.getUTCMinutes()).padStart(2, '0');
+      const sec = String(now.getUTCSeconds()).padStart(2, '0');
+      return `${hour}:${min}:${sec}`;
+    }
+
+    function fichar(tipo) {
+      const hoy = getUTCDate();
+      let dia = registros[userId].find(r => r.fecha === hoy);
+      const ahora = getUTCTime();
+
+      if (!dia) {
+        dia = { fecha: hoy, entrada: '', salida: '' };
+        registros[userId].push(dia);
+      }
+
+      if (tipo === 'entrada') dia.entrada = ahora;
+      if (tipo === 'salida') dia.salida = ahora;
+
+      localStorage.setItem('checkin_registros', JSON.stringify(registros));
+      cargarTabla();
+    }
+
+    function calcularHoras(entrada, salida) {
+      if (!entrada || !salida) return 0;
+      const [h1, m1] = entrada.split(":"), [h2, m2] = salida.split(":");
+      return ((+h2) * 60 + (+m2)) - ((+h1) * 60 + (+m1));
+    }
+
+    function cargarTabla() {
+      const tbody = document.querySelector('#tablaRegistros tbody');
+      tbody.innerHTML = '';
+      let total = 0;
+      registros[userId].forEach(reg => {
+        const horasMin = calcularHoras(reg.entrada, reg.salida);
+        total += horasMin;
+        const horas = (horasMin / 60).toFixed(2);
+        tbody.innerHTML += `<tr>
+          <td>${reg.fecha}</td>
+          <td>${reg.entrada || '-'}</td>
+          <td>${reg.salida || '-'}</td>
+          <td>${horas}</td>
+        </tr>`;
+      });
+      document.getElementById('totalHoras').textContent = (total / 60).toFixed(2);
+    }
+
+    function cerrarSesion() {
+      localStorage.removeItem('checkin_user_id');
+      window.location.href = 'index.html';
+    }
+
+    cargarTabla();
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(reg => console.log('Service Worker registrado', reg))
+          .catch(err => console.error('Error registrando SW', err));
+      });
+    }
+  </script>
+</body>
+</html>
